@@ -199,6 +199,8 @@ local function bed_extension(pos, color)
 	local topnode = minetest.get_node({x=pos.x, y=pos.y+1.0, z=pos.z})
 	local thisnode = minetest.get_node(pos)
 	local bottomnode = minetest.get_node({x=pos.x, y=pos.y-1.0, z=pos.z})
+        local rightnode = minetest.get_node({x=pos.x+1.0, y=pos.y, z=pos.z})
+        local leftnode = minetest.get_node({x=pos.x-1.0, y=pos.y, z=pos.z})
 
 	local fdir = thisnode.param2
 
@@ -215,14 +217,70 @@ local function bed_extension(pos, color)
 		    minetest.set_node({x=pos.x, y=pos.y-1.0, z=pos.z}, { name = newnode, param2 = fdir})
 		end
     end
+
+	if string.find(rightnode.name, "homedecor:bed_.*_foot$") then
+		if fdir == rightnode.param2 then
+			local newnode = string.gsub(thisnode.name, "_foot", "_foot_extleft")
+			local newnode2 = string.gsub(thisnode.name, "_foot", "_foot_extright")
+			minetest.set_node({x=pos.x+1.0, y=pos.y, z=pos.z}, { name = newnode, param2 = fdir})
+			minetest.set_node(pos, { name = newnode2, param2 = fdir})
+		end
+	end
+
+	if string.find(leftnode.name, "homedecor:bed_.*_foot$") then
+		if fdir == leftnode.param2 then
+			local newnode = string.gsub(thisnode.name, "_foot", "_foot_extright")
+			local newnode2 = string.gsub(thisnode.name, "_foot", "_foot_extleft")
+			minetest.set_node({x=pos.x-1.0, y=pos.y, z=pos.z}, { name = newnode, param2 = fdir})
+			minetest.set_node(pos, { name = newnode2, param2 = fdir})
+		end
+	end
+
+	if string.find(rightnode.name, "homedecor:bed_.*_head$") then
+		if fdir == rightnode.param2 then
+			local newnode = string.gsub(thisnode.name, "_head", "_head_extleft")
+			local newnode2 = string.gsub(thisnode.name, "_head", "_head_extright")
+			minetest.set_node({x=pos.x+1.0, y=pos.y, z=pos.z}, { name = newnode, param2 = fdir})
+			minetest.set_node(pos, { name = newnode2, param2 = fdir})
+		end
+	end
+
+	if string.find(leftnode.name, "homedecor:bed_.*_head$") then
+		if fdir == leftnode.param2 then
+			local newnode = string.gsub(thisnode.name, "_head", "_head_extright")
+			local newnode2 = string.gsub(thisnode.name, "_head", "_head_extleft")
+			minetest.set_node({x=pos.x-1.0, y=pos.y, z=pos.z}, { name = newnode, param2 = fdir})
+			minetest.set_node(pos, { name = newnode2, param2 = fdir})
+		end
+	end
+
 end
 
 local function unextend_bed(pos, color)
 	local bottomnode = minetest.get_node({x=pos.x, y=pos.y-1.0, z=pos.z})
+        local rightnode = minetest.get_node({x=pos.x+1.0, y=pos.y, z=pos.z})
+        local leftnode = minetest.get_node({x=pos.x-1.0, y=pos.y, z=pos.z})
+        local rightnodehead = minetest.get_node({x=pos.x+1.0, y=pos.y, z=pos.z-1.0})
+        local leftnodehead = minetest.get_node({x=pos.x-1.0, y=pos.y, z=pos.z-1.0})
 	local fdir = bottomnode.param2
+	local fdirleft = leftnode.param2
+	local fdirright = rightnode.param2
+
 	if  string.find(bottomnode.name, "homedecor:bed_.*_footext$") then
 		local newnode = string.gsub(bottomnode.name, "_footext", "_foot")
 		minetest.set_node({x=pos.x, y=pos.y-1.0, z=pos.z}, { name = newnode, param2 = fdir})
+	end
+	if  string.find(rightnode.name, "homedecor:bed_.*_foot_extright$") then
+		local newnode = string.gsub(rightnode.name, "_foot_extright", "_foot")
+		local newnode2 = string.gsub(rightnodehead.name, "_head_extright", "_head")
+		minetest.set_node({x=pos.x+1.0, y=pos.y, z=pos.z}, { name = newnode, param2 = fdirright})
+		minetest.set_node({x=pos.x+1.0, y=pos.y, z=pos.z-1.0}, { name = newnode2, param2 = fdirright})
+	end
+	if  string.find(leftnode.name, "homedecor:bed_.*_foot_extleft$") then
+		local newnode = string.gsub(leftnode.name, "_foot_extleft", "_foot")
+		local newnode2 = string.gsub(leftnodehead.name, "_head_extleft", "_head")
+		minetest.set_node({x=pos.x-1.0, y=pos.y, z=pos.z}, { name = newnode, param2 = fdirleft})
+		minetest.set_node({x=pos.x-1.0, y=pos.y, z=pos.z-1.0}, { name = newnode2, param2 = fdirleft})
 	end
 end
 
@@ -257,7 +315,10 @@ for _, color in ipairs(bedcolors) do
 		selection_box = {
 			type = "fixed",
 			fixed = { 0, 0, 0, 0, 0, 0 }
-		}
+		},
+		on_construct = function(pos)
+			bed_extension(pos, color)
+		end,
 	})
 
 	minetest.register_node("homedecor:bed_"..color.."_foot", {
@@ -281,10 +342,8 @@ for _, color in ipairs(bedcolors) do
 				{-0.5,     -0.5,     -0.5,     -0.375,  0.1875,   -0.4375},  --  NodeBox1
 				{0.375,    -0.5,     -0.5,     0.5,     0.1875,   -0.4375},  --  NodeBox2
 				{-0.5,     0,        -0.5,     0.5,     0.125,    -0.4375},  --  NodeBox3
-				{-0.5,     -0.375,   -0.5,     0.5,     -0.125,   -0.4375},  --  NodeBox4
-				{-0.5,  -0.375,   -0.5,     0.5,  -0.125,   0.5},      --  NodeBox5
-				{0.375,    -0.375,   -0.5,     0.4375,  -0.125,   0.5},      --  NodeBox6
-				{-0.4375,   -0.3125,  -0.4375,  0.4375,   -0.0625,  0.5},      --  NodeBox7
+				{-0.5,  -0.375,   -0.5,     0.5,  -0.125,   0.5},      --  NodeBox4
+				{-0.4375,   -0.3125,  -0.4375,  0.4375,   -0.0625,  0.5},      --  NodeBox5
 			}
 		},
 		selection_box = {
@@ -330,10 +389,8 @@ for _, color in ipairs(bedcolors) do
 				{-0.5,     -0.5,     -0.5,     -0.375,  0.5,   -0.4375},  --  NodeBox1
 				{0.375,    -0.5,     -0.5,     0.5,     0.5,   -0.4375},  --  NodeBox2
 				{-0.5,     0,        -0.5,     0.5,     0.125,    -0.4375},  --  NodeBox3
-				{-0.5,     -0.375,   -0.5,     0.5,     -0.125,   -0.4375},  --  NodeBox4
-				{-0.5,  -0.375,   -0.5,     0.5,  -0.125,   0.5},      --  NodeBox5
-				{0.375,    -0.375,   -0.5,     0.4375,  -0.125,   0.5},      --  NodeBox6
-				{-0.4375,   -0.3125,  -0.4375,  0.4375,   -0.0625,  0.5},      --  NodeBox7
+				{-0.5,  -0.375,   -0.5,     0.5,  -0.125,   0.5},      --  NodeBox4
+				{-0.4375,   -0.3125,  -0.4375,  0.4375,   -0.0625,  0.5},      --  NodeBox5
 			}
 		},
 		selection_box = {
@@ -345,6 +402,150 @@ for _, color in ipairs(bedcolors) do
 			if not fdir or fdir > 3 then return end
 			local pos2 = { x = pos.x + homedecor.fdir_to_fwd[fdir+1][1], y=pos.y, z = pos.z + homedecor.fdir_to_fwd[fdir+1][2] }
 			if minetest.get_node(pos2).name == "homedecor:bed_"..color.."_head" then
+				minetest.remove_node(pos2)
+			end
+			unextend_bed(pos, color)
+		end,
+		drop = "homedecor:bed_"..color.."_foot"
+	})
+
+	minetest.register_node("homedecor:bed_"..color.."_head_extleft", {
+		tiles = {
+			"homedecor_bed_"..color.."_top1_extright.png^[transformFX",
+			"homedecor_bed_bottom1_extright.png^[transformFX",
+			"homedecor_bed_"..color.."_side1.png",
+			"homedecor_bed_"..color.."_side1.png^[transformFX",
+			"homedecor_bed_head1_extright.png",
+			"homedecor_bed_"..color.."_head2_extright.png^[transformFX"
+		},
+		drawtype = "nodebox",
+		paramtype = "light",
+		paramtype2 = "facedir",
+		groups = {snappy=3, not_in_creative_inventory=1},
+		node_box = {
+			type = "fixed",
+			fixed = {
+				{-0.5,     -0.5,     0.4375,   -0.375,  0.5,      0.5},      --  NodeBox1
+				{-0.5,     0.25,     0.4375,   0.5,     0.4375,   0.5},      --  NodeBox2
+				{-0.5,     -0.0625,        0.4375,   0.5,     0.1875,   0.5},      --  NodeBox3
+				{-0.5,  -0.375,   -0.5,     0.5,  -0.125,   0.5},      --  NodeBox4
+				{0.375,    -0.375,   -0.5,     0.4375,  -0.125,   0.5},      --  NodeBox5
+				{-0.4375,   -0.3125,  -0.5,     0.5,   -0.0625,  0.4375},   --  NodeBox6
+				{-0.3125,  -0.125,   0.0625,   0.5,  0.0625,   0.4375},   --  NodeBox7
+			}
+		},
+		selection_box = {
+			type = "fixed",
+			fixed = { 0, 0, 0, 0, 0, 0 }
+		},
+		after_dig_node = function(pos, oldnode, oldmetadata, digger)
+			unextend_bed(pos, color)
+                end
+	})
+
+	minetest.register_node("homedecor:bed_"..color.."_foot_extleft", {
+		tiles = {
+			"homedecor_bed_"..color.."_top2_extright.png^[transformFX",
+			"homedecor_bed_bottom2_extright.png^[transformFX",
+			"homedecor_bed_"..color.."_side2.png",
+			"homedecor_bed_"..color.."_side2.png^[transformFX",
+			"homedecor_bed_foot2.png",
+			"homedecor_bed_"..color.."_foot1_extright.png^[transformFX"
+		},
+		drawtype = "nodebox",
+		paramtype = "light",
+		paramtype2 = "facedir",
+		groups = {snappy=3, not_in_creative_inventory=1},
+		node_box = {
+			type = "fixed",
+			fixed = {
+				{-0.5,     -0.5,     -0.5,     -0.375,  0.1875,   -0.4375},  --  NodeBox1
+				{-0.5,     0,        -0.5,     0.5,     0.125,    -0.4375},  --  NodeBox2
+				{-0.5,  -0.375,   -0.5,     0.5,  -0.125,   0.5},      --  NodeBox3
+				{-0.4375,   -0.3125,  -0.4375,  0.5,   -0.0625,  0.5},      --  NodeBox4
+			}
+		},
+		selection_box = {
+			type = "fixed",
+			fixed = { -0.5, -0.5, -0.5, 0.5, 0.5, 1.5 }
+		},
+		after_dig_node = function(pos, oldnode, oldmetadata, digger)
+			local fdir = oldnode.param2
+			if not fdir or fdir > 3 then return end
+			local pos2 = { x = pos.x + homedecor.fdir_to_fwd[fdir+1][1], y=pos.y, z = pos.z + homedecor.fdir_to_fwd[fdir+1][2] }
+			if minetest.get_node(pos2).name == "homedecor:bed_"..color.."_head_extleft" then
+				minetest.remove_node(pos2)
+			end
+			unextend_bed(pos, color)
+		end,
+		drop = "homedecor:bed_"..color.."_foot"
+	})
+
+	minetest.register_node("homedecor:bed_"..color.."_head_extright", {
+		tiles = {
+			"homedecor_bed_"..color.."_top1_extright.png",
+			"homedecor_bed_bottom1_extright.png",
+			"homedecor_bed_"..color.."_side1.png",
+			"homedecor_bed_"..color.."_side1.png^[transformFX",
+			"homedecor_bed_head1_extright.png^[transformFX",
+			"homedecor_bed_"..color.."_head2_extright.png"
+		},
+		drawtype = "nodebox",
+		paramtype = "light",
+		paramtype2 = "facedir",
+		groups = {snappy=3, not_in_creative_inventory=1},
+		node_box = {
+			type = "fixed",
+			fixed = {
+				{0.375,    -0.5,     0.4375,   0.5,     0.5,      0.5},      --  NodeBox1
+				{-0.5,     0.25,     0.4375,   0.5,     0.4375,   0.5},      --  NodeBox2
+				{-0.5,     -0.0625,        0.4375,   0.5,     0.1875,   0.5},      --  NodeBox3
+				{-0.5,  -0.375,   -0.5,     0.5,  -0.125,   0.5},      --  NodeBox4
+				{0.375,    -0.375,   -0.5,     0.4375,  -0.125,   0.5},      --  NodeBox5
+				{-0.5,   -0.3125,  -0.5,     0.4375,   -0.0625,  0.4375},   --  NodeBox6
+				{-0.5,  -0.125,   0.0625,   0.3125,  0.0625,   0.4375},   --  NodeBox7
+			}
+		},
+		selection_box = {
+			type = "fixed",
+			fixed = { 0, 0, 0, 0, 0, 0 }
+		},
+		after_dig_node = function(pos, oldnode, oldmetadata, digger)
+			unextend_bed(pos, color)
+                end
+	})
+
+	minetest.register_node("homedecor:bed_"..color.."_foot_extright", {
+		tiles = {
+			"homedecor_bed_"..color.."_top2_extright.png",
+			"homedecor_bed_bottom2_extright.png",
+			"homedecor_bed_"..color.."_side2.png",
+			"homedecor_bed_"..color.."_side2.png^[transformFX",
+			"homedecor_bed_foot2.png",
+			"homedecor_bed_"..color.."_foot1_extright.png"
+		},
+		drawtype = "nodebox",
+		paramtype = "light",
+		paramtype2 = "facedir",
+		groups = {snappy=3, not_in_creative_inventory=1},
+		node_box = {
+			type = "fixed",
+			fixed = {
+				{0.375,    -0.5,     -0.5,     0.5,     0.1875,   -0.4375},  --  NodeBox1
+				{-0.5,     0,        -0.5,     0.5,     0.125,    -0.4375},  --  NodeBox2
+				{-0.5,  -0.375,   -0.5,     0.5,  -0.125,   0.5},      --  NodeBox3
+				{-0.5,   -0.3125,  -0.4375,  0.4375,   -0.0625,  0.5},      --  NodeBox4
+			}
+		},
+		selection_box = {
+			type = "fixed",
+			fixed = { -0.5, -0.5, -0.5, 0.5, 0.5, 1.5 }
+		},
+		after_dig_node = function(pos, oldnode, oldmetadata, digger)
+			local fdir = oldnode.param2
+			if not fdir or fdir > 3 then return end
+			local pos2 = { x = pos.x + homedecor.fdir_to_fwd[fdir+1][1], y=pos.y, z = pos.z + homedecor.fdir_to_fwd[fdir+1][2] }
+			if minetest.get_node(pos2).name == "homedecor:bed_"..color.."_head_extright" then
 				minetest.remove_node(pos2)
 			end
 			unextend_bed(pos, color)
